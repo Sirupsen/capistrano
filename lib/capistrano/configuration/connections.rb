@@ -200,6 +200,11 @@ module Capistrano
           rescue ConnectionError => error
             raise error unless task && task.continue_on_error?
             error.hosts.each do |h|
+              error_message = "Failed to connect to #{h}: #{error.message}. Ignoring it for the rest of the session."
+              $capistrano_warnings ||= []
+              $capistrano_warnings << error_message
+              logger.important error_message
+
               servers_slice.delete(h)
               failed!(h)
             end
@@ -209,7 +214,13 @@ module Capistrano
             yield servers_slice
           rescue RemoteError => error
             raise error unless task && task.continue_on_error?
-            error.hosts.each { |h| failed!(h) }
+            error.hosts.each do |h|
+              error_message = "Host #{h} failed: #{error.message}. Ignoring it for the rest of the session."
+              $capistrano_warnings ||= []
+              $capistrano_warnings << error_message
+              logger.important error_message
+              failed!(h)
+            end
           end
 
           # if dealing with a subset (e.g., :max_hosts is less than the
