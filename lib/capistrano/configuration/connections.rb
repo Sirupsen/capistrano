@@ -172,6 +172,10 @@ module Capistrano
           end
         end
 
+        # Delete any servers from the server list that has failed previously
+        # with connection errors.
+        servers.delete_if { |s| has_failed?(s) } if $ignore_failure_hosts
+
         servers = [servers.first] if options[:once]
         [task, servers.compact]
       end
